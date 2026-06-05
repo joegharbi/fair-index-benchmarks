@@ -1,0 +1,9 @@
+{application, fair_index,
+ [{description, "Fair index static HTTP server (Erlang)"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {fair_index_app, []}},
+  {applications, [kernel, stdlib]},
+  {env, []},
+  {modules, []}
+ ]}.

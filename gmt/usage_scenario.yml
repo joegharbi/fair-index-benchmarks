@@ -1,0 +1,30 @@
+---
+# Fair index — single-load template (GMT placeholders).
+# Hosted form: enter only the middle of the variable name (BEAM_IMAGE, NUM_REQUESTS).
+# Local runner.py: --variable "__GMT_VAR_BEAM_IMAGE__=fair-erlang-index" etc.
+name: Fair index (single load, 100 workers)
+author: fair-index-benchmarks
+description: >
+  One BEAM index server (Erlang or Elixir, behaviourally identical) plus a load
+  generator issuing parallel HTTP GETs at a fixed worker count (100) matching the
+  BEAM framework. Server listens on port 80.
+
+services:
+  beam-server:
+    image: __GMT_VAR_BEAM_IMAGE__
+
+  loadgen:
+    image: alpine:3.19
+    folder-destination: /tmp/repo
+    depends_on:
+      - beam-server
+    setup-commands:
+      - command: apk add --no-cache python3 py3-requests
+
+flow:
+  - name: HTTP workload
+    container: loadgen
+    commands:
+      - type: console
+        shell: sh
+        command: python3 /tmp/repo/gmt/tools/http_load.py --url http://beam-server:80/ --num_requests __GMT_VAR_NUM_REQUESTS__ --max-workers 100

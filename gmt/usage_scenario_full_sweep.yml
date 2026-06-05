@@ -1,0 +1,30 @@
+---
+# Fair index — full sweep (all 13 loads chained in one GMT measurement).
+# Practical for the hosted form: ONE submission per image. Only BEAM_IMAGE is needed.
+# NOTE: a chained sweep shares server/thermal state across loads. For clean point-by-point
+# curves prefer usage_scenario.yml (one run per load). Use this for convenience on the cloud.
+name: Fair index (full sweep, 100 workers)
+author: fair-index-benchmarks
+description: >
+  One BEAM index server plus a load generator that runs the full BEAM load list
+  (100..80000) sequentially in a single measurement, at a fixed worker count (100).
+
+services:
+  beam-server:
+    image: __GMT_VAR_BEAM_IMAGE__
+
+  loadgen:
+    image: alpine:3.19
+    folder-destination: /tmp/repo
+    depends_on:
+      - beam-server
+    setup-commands:
+      - command: apk add --no-cache python3 py3-requests
+
+flow:
+  - name: HTTP workload (sequential loads in one measurement)
+    container: loadgen
+    commands:
+      - type: console
+        shell: sh
+        command: python3 /tmp/repo/gmt/tools/http_load.py --url http://beam-server:80/ --sweep --max-workers 100

@@ -26,12 +26,14 @@ build_one () {
   fi
 }
 
-build_one fair-erlang-index "${HERE}/servers/erlang-index"
-build_one fair-elixir-index "${HERE}/servers/elixir-index"
+build_one fair-erlang-index   "${HERE}/servers/erlang-index"
+build_one fair-elixir-index   "${HERE}/servers/elixir-index"
+build_one fair-erlang-dynamic "${HERE}/servers/erlang-dynamic"
+build_one fair-elixir-dynamic "${HERE}/servers/elixir-dynamic"
 
 if [[ "$PUSH" == "1" ]]; then
   echo "Done. In GitHub > your profile > Packages, set both packages to PUBLIC so the"
   echo "GMT cloud workers can pull them (or give Green Coding private pull credentials)."
 else
-  echo "Done. Local images: fair-erlang-index, fair-elixir-index"
+  echo "Done. Local images: fair-erlang-index, fair-elixir-index, fair-erlang-dynamic, fair-elixir-dynamic"
 fi

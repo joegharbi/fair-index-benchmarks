@@ -1,0 +1,31 @@
+---
+# Fair WebSocket — full sweep: burst AND stream across clients {5,50,100} in one
+# measurement (mirrors the BEAM framework's WS coverage). One submission per image.
+name: Fair WebSocket (full sweep — burst+stream x 5/50/100 clients)
+author: fair-index-benchmarks
+description: >
+  One BEAM WebSocket echo server (Erlang or Elixir, behaviourally identical) plus a
+  load generator that runs burst and stream echo workloads across a concurrency sweep
+  (5, 50, 100 clients) sequentially in a single measurement. Server does the RFC 6455
+  handshake and echoes frames on port 80.
+
+services:
+  beam-server:
+    image: __GMT_VAR_BEAM_IMAGE__
+
+  loadgen:
+    image: alpine:3.19
+    folder-destination: /tmp/repo
+    depends_on:
+      - beam-server
+    setup-commands:
+      - command: apk add --no-cache python3 py3-pip
+      - command: pip install --break-system-packages websockets
+
+flow:
+  - name: WebSocket workload (burst+stream sweep, one measurement)
+    container: loadgen
+    commands:
+      - type: console
+        shell: sh
+        command: python3 /tmp/repo/gmt/tools/ws_load.py --url ws://beam-server:80/ --sweep --size_kb 64 --bursts 100 --duration 20

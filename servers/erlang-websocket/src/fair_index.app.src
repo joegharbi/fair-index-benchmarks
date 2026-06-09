@@ -1,0 +1,9 @@
+{application, fair_index,
+ [{description, "Fair WebSocket echo server (Erlang)"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {fair_index_app, []}},
+  {applications, [kernel, stdlib, crypto]},
+  {env, []},
+  {modules, []}
+ ]}.

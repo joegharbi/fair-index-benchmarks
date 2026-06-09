@@ -26,7 +26,7 @@ HTTP_IMAGES="${HTTP_IMAGES:-fair-erlang-index fair-elixir-index fair-erlang-dyna
 WS_IMAGES="${WS_IMAGES:-fair-erlang-websocket fair-elixir-websocket}"
 WS_CLIENTS="${WS_CLIENTS:-5 50 100}"
 WS_SIZE_KB="${WS_SIZE_KB:-64}"
-WS_BURSTS="${WS_BURSTS:-100}"
+WS_BURSTS="${WS_BURSTS:-2000}"   # long enough that short bursts still get reliable power samples
 WS_RATE="${WS_RATE:-50}"
 WS_DURATION="${WS_DURATION:-20}"
 

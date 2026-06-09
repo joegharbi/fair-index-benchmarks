@@ -106,7 +106,7 @@ sweep (100…80000); WebSocket: burst and stream across {5, 50, 100} clients.
 GMT_ROOT=/path/to/green-metrics-tool ./scripts/run_local_gmt.sh
 
 # Benchmarking framework (Scaphandre)
-FRAMEWORK_ROOT=/path/to/BEAM-web-server-benchmarks ./scripts/run_local_framework.sh --build
+FRAMEWORK_ROOT=/path/to/web-server-benchmarks ./scripts/run_local_framework.sh --build
 ```
 
 See [docs/LOCAL_RUNS.md](docs/LOCAL_RUNS.md) for options and prerequisites.
@@ -122,7 +122,7 @@ See [docs/LOCAL_RUNS.md](docs/LOCAL_RUNS.md) for options and prerequisites.
 
 ## Related
 
-- BEAM-web-server-benchmarks: <https://github.com/joegharbi/BEAM-web-server-benchmarks>
+- web-server-benchmarks: <https://github.com/joegharbi/web-server-benchmarks>
 - Green Metrics Tool: <https://github.com/green-coding-solutions/green-metrics-tool> ·
   <https://metrics.green-coding.io>
 - Scaphandre: <https://github.com/hubblo-org/scaphandre>

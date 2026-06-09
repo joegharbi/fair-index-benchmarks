@@ -14,7 +14,7 @@ WebSocket = burst and stream across {5, 50, 100} clients, 64 KB messages.
 ## Prerequisites
 - Local images built: `PUSH=0 ./scripts/build_and_push.sh` (or pass `--build` to the framework script).
 - Framework: Docker, Scaphandre, sudo, and a checkout of the
-  [web-server benchmarking framework](https://github.com/joegharbi/BEAM-web-server-benchmarks)
+  [web-server benchmarking framework](https://github.com/joegharbi/web-server-benchmarks)
   (set `FRAMEWORK_ROOT` if it is not a sibling folder).
 - GMT: a working local installation (set `GMT_ROOT`). On machines with OEM power limits (common on
   laptops), RAPL energy filtering can stop GMT's RAPL providers — rerun with `IGNORE_RAPL_FILTER=1`
@@ -23,7 +23,7 @@ WebSocket = burst and stream across {5, 50, 100} clients, 64 KB messages.
 ## Run
 ```bash
 # framework (builds local images, then HTTP + WebSocket)
-FRAMEWORK_ROOT=/path/to/BEAM-web-server-benchmarks ./scripts/run_local_framework.sh --build
+FRAMEWORK_ROOT=/path/to/web-server-benchmarks ./scripts/run_local_framework.sh --build
 
 # local GMT (commit first — GMT reads the repository at --uri)
 GMT_ROOT=/path/to/green-metrics-tool ./scripts/run_local_gmt.sh

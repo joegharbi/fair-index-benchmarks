@@ -8,7 +8,7 @@
 # Writes one CSV per image + a full log into results/local-framework/<timestamp>/.
 #
 # Usage:
-#   FRAMEWORK_ROOT=/path/to/BEAM-web-server-benchmarks ./scripts/run_local_framework.sh
+#   FRAMEWORK_ROOT=/path/to/web-server-benchmarks ./scripts/run_local_framework.sh
 #   ./scripts/run_local_framework.sh --build       # (re)build local images first
 #   ./scripts/run_local_framework.sh --http-only   # skip WebSocket
 #   ./scripts/run_local_framework.sh --ws-only     # only WebSocket
@@ -18,7 +18,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-FRAMEWORK_ROOT="${FRAMEWORK_ROOT:-$(cd "$HERE/.." && pwd)/BEAM-web-server-benchmarks}"
+FRAMEWORK_ROOT="${FRAMEWORK_ROOT:-$(cd "$HERE/.." && pwd)/web-server-benchmarks}"
 WORKERS="${WORKERS:-100}"
 PORT="${PORT:-8001}"
 HTTP_LOADS="${HTTP_LOADS:-100 1000 5000 8000 10000 15000 20000 30000 40000 50000 60000 70000 80000}"

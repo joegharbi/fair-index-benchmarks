@@ -27,4 +27,4 @@ flow:
     commands:
       - type: console
         shell: sh
-        command: python3 /tmp/repo/gmt/tools/ws_load.py --url ws://beam-server:80/ --pattern burst --clients 50 --size_kb 64 --bursts 100
+        command: python3 /tmp/repo/gmt/tools/ws_load.py --url ws://beam-server:80/ --pattern burst --clients 50 --size_kb 64 --bursts 2000 --startup_wait 2

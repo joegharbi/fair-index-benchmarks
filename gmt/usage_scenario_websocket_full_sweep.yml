@@ -1,6 +1,6 @@
 ---
 # Fair WebSocket — full sweep: burst AND stream across clients {5,50,100} in one
-# measurement (mirrors the BEAM framework's WS coverage). One submission per image.
+# measurement (sustained load — long enough for a valid energy measurement). One submission per image.
 name: Fair WebSocket (full sweep — burst+stream x 5/50/100 clients)
 author: fair-index-benchmarks
 description: >
@@ -28,4 +28,4 @@ flow:
     commands:
       - type: console
         shell: sh
-        command: python3 /tmp/repo/gmt/tools/ws_load.py --url ws://beam-server:80/ --sweep --size_kb 64 --bursts 100 --duration 20
+        command: python3 /tmp/repo/gmt/tools/ws_load.py --url ws://beam-server:80/ --sweep --size_kb 64 --bursts 100 --duration 20 --startup_wait 2

@@ -31,7 +31,7 @@ Two runtimes × three workloads = six images:
 
 | Workload | Description | Images |
 |---|---|---|
-| `index` (static) | serves a small HTML file, read once at startup | `fair-erlang-index`, `fair-elixir-index` |
+| `static` | serves a small HTML file, read once at startup | `fair-erlang-index`, `fair-elixir-index` |
 | `dynamic` | generates the response body per request (current time) | `fair-erlang-dynamic`, `fair-elixir-dynamic` |
 | `websocket` | RFC 6455 echo server | `fair-erlang-websocket`, `fair-elixir-websocket` |
 

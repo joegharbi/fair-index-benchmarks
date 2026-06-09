@@ -1,129 +1,132 @@
-# Fair Index Benchmarks — Erlang vs Elixir (tool-comparison re-run)
+# Fair Web-Server Benchmarks
 
-Behaviourally **identical** Erlang and Elixir "index" static HTTP servers, so an energy/performance
-comparison reflects the **language/runtime**, not implementation accidents. Used to re-run the same
-workload through three measurement paths and compare fairly:
+Behaviourally identical web-server implementations across BEAM runtimes (Erlang and Elixir), so that
+energy and performance comparisons reflect the **language and runtime** rather than incidental
+implementation differences. The suite covers three workload families — **static HTTP**, **dynamic
+HTTP**, and **WebSocket** — and is built to be measured by both the
+[Green Metrics Tool](https://github.com/green-coding-solutions/green-metrics-tool) and a
+Scaphandre-based [web-server benchmarking framework](https://github.com/joegharbi/BEAM-web-server-benchmarks),
+so results from different tools and environments can be compared on equal footing.
 
-1. **GMT cloud** (Green Coding hosted measurement cluster) — *start here*
-2. **GMT locally** (your laptop)
-3. **Your BEAM web-server framework locally** (Scaphandre)
+## Why "fair"
 
-> Standalone project — it does not modify `web-server-benchmarks`, `beam-gmt-benchmarks`, or
-> `BEAM-web-server-benchmarks`.
+When comparing the energy of servers written in different languages, implementation details (HTTP
+correctness, connection handling, runtime packaging) can dominate the result and mask the actual
+language/runtime cost. Every server here is implemented to the **same specification**; only the
+language runtime differs.
 
-## Why these are "fair"
-
-Both servers are identical in behaviour; only the language runtime differs:
-
-| Property | Both servers |
+| Property | All servers |
 |---|---|
-| Structure | OTP **application + supervisor + acceptor** |
-| Transport | raw `gen_tcp`, `backlog: 1024`, `nodelay`, `active:false` |
-| Request | **reads the full request** (recv until `\r\n\r\n`, 5 s timeout) |
-| Response | `200` + `Content-Type` + **`Content-Length`** + `Connection: close` (GET→index.html); `204` (POST) |
-| Index file | read **once** at boot, cached in memory |
-| Connection | closed per request (no keep-alive) — identical on both |
-| Packaging | built and run as a **release** (no `mix run`/dev tooling resident) |
+| Structure | OTP application + supervisor + acceptor |
+| Transport | raw `gen_tcp` — `backlog: 1024`, `nodelay`, `active: false` |
+| HTTP request | fully read (recv until `\r\n\r\n`, 5 s timeout) |
+| HTTP response | `200` with `Content-Type` + `Content-Length` + `Connection: close` (`GET`); `204` (`POST`) |
+| WebSocket | RFC 6455 handshake + frame echo; unmasked server frames |
+| Packaging | compiled and run as a release (no build/dev tooling resident) |
+| Concurrency | one lightweight process per connection |
 
-This removes the asymmetries diagnosed in the old index servers (Erlang didn't read the request and
-sent no `Content-Length`; Elixir did; Erlang ran bare `erl` vs Elixir `mix run`; both used the tiny
-default backlog of 5).
+## Workloads and images
+
+Two runtimes × three workloads = six images:
+
+| Workload | Description | Images |
+|---|---|---|
+| `index` (static) | serves a small HTML file, read once at startup | `fair-erlang-index`, `fair-elixir-index` |
+| `dynamic` | generates the response body per request (current time) | `fair-erlang-dynamic`, `fair-elixir-dynamic` |
+| `websocket` | RFC 6455 echo server | `fair-erlang-websocket`, `fair-elixir-websocket` |
 
 ## Layout
 
 ```
-servers/erlang-index/   # rebar3 release: src/*.erl, rebar.config, Dockerfile, index.html
-servers/elixir-index/   # mix release: lib/fair_index/*.ex, mix.exs, Dockerfile, index.html
-gmt/usage_scenario.yml             # single load (vars: BEAM_IMAGE, NUM_REQUESTS)
-gmt/usage_scenario_full_sweep.yml  # all 13 loads in one run (var: BEAM_IMAGE)
-gmt/tools/http_load.py             # load generator (100 workers, mirrors measure_docker.py)
-scripts/build_and_push.sh          # build (+push to ghcr)
-scripts/pull_results.py            # list your GMT runs via the API
+servers/
+  erlang-index/      elixir-index/        # static file server (release)
+  erlang-dynamic/    elixir-dynamic/      # dynamic (generated body) server
+  erlang-websocket/  elixir-websocket/    # RFC 6455 echo server
+gmt/
+  usage_scenario.yml                       # single HTTP load (vars: BEAM_IMAGE, NUM_REQUESTS)
+  usage_scenario_full_sweep.yml            # HTTP load sweep in one run (var: BEAM_IMAGE)
+  usage_scenario_websocket.yml             # single WebSocket burst run
+  usage_scenario_websocket_full_sweep.yml  # WebSocket burst+stream across {5,50,100} clients
+  tools/http_load.py                       # HTTP load generator
+  tools/ws_load.py                         # WebSocket load generator
+scripts/
+  build_and_push.sh                        # build all images (and optionally push to a registry)
+  run_local_gmt.sh                         # run the GMT scenarios on a local GMT install
+  run_local_framework.sh                   # run the benchmarking framework locally
+  pull_results.py                          # list hosted GMT runs via the public API
+docs/LOCAL_RUNS.md                         # local-run instructions
 ```
 
-## Step 1 — Build + smoke-test the images
+## Requirements
+
+- Docker
+- A [Green Metrics Tool](https://github.com/green-coding-solutions/green-metrics-tool) installation
+  (local or hosted) for the GMT measurements
+- [Scaphandre](https://github.com/hubblo-org/scaphandre) and the
+  [web-server benchmarking framework](https://github.com/joegharbi/BEAM-web-server-benchmarks)
+  for the framework measurements
+- A container registry (only needed when running on a hosted GMT cluster)
+
+## Build
 
 ```bash
+# all six images, local tags only
+PUSH=0 ./scripts/build_and_push.sh
+# or a single image
 docker build -t fair-erlang-index servers/erlang-index
-docker build -t fair-elixir-index servers/elixir-index
-# smoke test (expect: HTTP/1.1 200, Content-Length, Connection: close)
+```
+
+Quick check (expect `HTTP/1.1 200`, `Content-Length`, `Connection: close`):
+
+```bash
 docker run -d --rm -p 8001:80 --name t fair-erlang-index && sleep 2 && curl -i localhost:8001/ ; docker stop t
 ```
 
-## Step 2 (CLOUD) — push images + repo, then submit
+## Running on a hosted GMT cluster
 
-**A. Push images** to a registry the cloud can pull:
-```bash
-docker login ghcr.io
-GHCR_USER=joegharbi TAG=v1 ./scripts/build_and_push.sh
-# then: GitHub > your profile > Packages > set BOTH packages to PUBLIC
-```
-**B. Push this folder** to GitHub (the cloud runner clones it for the loadgen):
-```bash
-git init && git add -A && git commit -m "fair index benchmarks" && git branch -M main
-git remote add origin https://github.com/joegharbi/fair-index-benchmarks.git
-git push -u origin main
-```
-**C. Submit** at <https://metrics.green-coding.io/request.html> — once per image (full sweep = 1 run, all 13 loads):
+1. Build and push the images, then make the packages public:
+   ```bash
+   docker login ghcr.io
+   GHCR_USER=<owner> TAG=v1 ./scripts/build_and_push.sh
+   ```
+2. Push this repository to a Git host the runner can clone.
+3. Submit one measurement per image, providing the scenario filename and the `BEAM_IMAGE` variable —
+   e.g. scenario `gmt/usage_scenario_full_sweep.yml` with
+   `BEAM_IMAGE = ghcr.io/<owner>/fair-erlang-index:v1`. WebSocket uses
+   `gmt/usage_scenario_websocket_full_sweep.yml`.
+4. List finished runs: `python3 scripts/pull_results.py <uri-filter>`.
 
-| Field | Erlang run | Elixir run |
-|---|---|---|
-| Repository URL | `https://github.com/joegharbi/fair-index-benchmarks` | same |
-| Branch | `main` | `main` |
-| Filename | `gmt/usage_scenario_full_sweep.yml` | same |
-| Name | `fair-erlang-index-sweep` | `fair-elixir-index-sweep` |
-| Variable key | `BEAM_IMAGE` | `BEAM_IMAGE` |
-| Variable value | `ghcr.io/joegharbi/fair-erlang-index:v1` | `ghcr.io/joegharbi/fair-elixir-index:v1` |
+## Running locally
 
-> In the key box type only `BEAM_IMAGE` (not the `__GMT_VAR_...__` wrapper).
-> Cleaner but heavier alternative: use `gmt/usage_scenario.yml` with `BEAM_IMAGE` + `NUM_REQUESTS`,
-> one submission per (image × load) = 26 submissions, giving isolated per-load runs.
-
-**D. Wait** for the result email; runs show up at
-<https://metrics.green-coding.io/runs.html?&uri=joegharbi&show_other_users=true>.
-
-## Step 3 — Hand results back to me
+Both legs use the same images and the same parameters — HTTP: 100 client workers over a 13-point load
+sweep (100…80000); WebSocket: burst and stream across {5, 50, 100} clients.
 
 ```bash
-python3 scripts/pull_results.py joegharbi fair-
-```
-Send me the run IDs (or just say they're done). I'll pull energy + the `GMT_HTTP_LOAD_SUMMARY`
-success/failure via the API and build the comparison: **joules per successful request**, ranking,
-and the success-rate overlay.
+# Green Metrics Tool (local install)
+GMT_ROOT=/path/to/green-metrics-tool ./scripts/run_local_gmt.sh
 
-## Step 4 (LATER) — GMT locally, same images
-
-```bash
-PUSH=0 ./scripts/build_and_push.sh          # local tags: fair-erlang-index, fair-elixir-index
-source /path/to/beam-gmt-benchmarks/scripts/_lib_env.sh   # or export GMT_ROOT, PY, RUNNER
-git add -A && git commit -m wip             # GMT clones the repo for the loadgen
-for IMG in fair-erlang-index fair-elixir-index; do
-  for n in 100 1000 5000 8000 10000 15000 20000 30000 40000 50000 60000 70000 80000; do
-    "$PY" "$RUNNER" --uri "$(pwd)" --filename gmt/usage_scenario.yml --name "fair-local-${IMG}-n${n}" \
-      --variable "__GMT_VAR_BEAM_IMAGE__=${IMG}" --variable "__GMT_VAR_NUM_REQUESTS__=${n}"
-  done
-done
+# Benchmarking framework (Scaphandre)
+FRAMEWORK_ROOT=/path/to/BEAM-web-server-benchmarks ./scripts/run_local_framework.sh --build
 ```
 
-## Step 5 (LATER) — your framework locally, same images (no edits to your repo)
+See [docs/LOCAL_RUNS.md](docs/LOCAL_RUNS.md) for options and prerequisites.
 
-```bash
-cd /path/to/BEAM-web-server-benchmarks
-for IMG in fair-erlang-index fair-elixir-index; do
-  for n in 100 1000 5000 8000 10000 15000 20000 30000 40000 50000 60000 70000 80000; do
-    python3 tools/measure_docker.py --server_image "$IMG" --measurement_type static \
-      --num_requests "$n" --max_workers 100 --port_mapping 8001:80 --output_csv "compare/${IMG}.csv"
-  done
-done
-```
+## Interpreting results
 
-## Fairness reminders (for the paper)
-- Same machine, same idle baseline, AC power, repeat **≥10×**, compare **medians**.
-- Cloud runs land on the Esprimo P956 (physical meter); local is your laptop — compare **rankings /
-  relative** differences, **not absolute joules** across machines.
-- Always report **success rate next to energy** (joules per *successful* request).
+- Report **success/failure alongside energy**: a server that drops requests can appear more efficient
+  if only energy is considered.
+- Compare **rankings and relative differences** across machines; absolute energy is only comparable
+  within the same hardware.
+- Prefer a **hardware power meter** as the reference where available; component RAPL readings may be
+  filtered on machines with OEM power limits.
 
-## Division of labour
-I can build all of this and **pull/analyse results via the API**, but I can't click the hosted form,
-push to your `ghcr.io`, or run Scaphandre/sudo locally — those steps are yours. Send me run IDs when
-the cloud runs finish.
+## Related
+
+- Web-server benchmarking framework: <https://github.com/joegharbi/BEAM-web-server-benchmarks>
+- Green Metrics Tool: <https://github.com/green-coding-solutions/green-metrics-tool> ·
+  <https://metrics.green-coding.io>
+- Scaphandre: <https://github.com/hubblo-org/scaphandre>
+
+## License
+
+MIT — see [LICENSE](LICENSE).

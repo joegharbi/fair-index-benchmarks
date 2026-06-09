@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Local GMT measurements of the fair servers — same scenarios as the cloud, but local
-# image tags and the local GMT install. Reproducible paper artifact.
+# Local GMT measurements of the fair servers — the same scenarios used for hosted runs,
+# with local image tags and a local Green Metrics Tool install.
 #
 # GMT stores results in its own database; view them in the dashboard by the --name prefix.
 # A full console log is also written to results/local-gmt/<timestamp>/run.log.
@@ -8,7 +8,7 @@
 # Usage:
 #   GMT_ROOT=/path/to/green-metrics-tool ./scripts/run_local_gmt.sh
 #   ./scripts/run_local_gmt.sh --http-only | --ws-only
-#   IGNORE_RAPL_FILTER=1 ./scripts/run_local_gmt.sh   # laptop RAPL workaround (RAPL caveated)
+#   IGNORE_RAPL_FILTER=1 ./scripts/run_local_gmt.sh   # bypass RAPL energy-filtering check (RAPL caveated)
 #
 # Env overrides: GMT_ROOT, PY, TAG, HTTP_IMAGES, WS_IMAGES
 # NOTE: commit pending changes first — GMT uses the repo at --uri.

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Local framework measurements (our tool: Scaphandre + measure_docker.py / measure_websocket.py)
-# of the fair index/dynamic/websocket servers. Reproducible paper artifact.
+# Local measurements with the web-server benchmarking framework (Scaphandre +
+# measure_docker.py / measure_websocket.py) of the fair index/dynamic/websocket servers.
 #
-# Mirrors the cloud parameters (100 HTTP workers; WS burst+stream x {5,50,100} clients, 64 KB)
-# so the framework and GMT results are directly comparable.
+# Uses the same parameters as a hosted run (100 HTTP workers; WebSocket burst+stream across
+# {5,50,100} clients, 64 KB) so results are directly comparable across environments.
 #
 # Writes one CSV per image + a full log into results/local-framework/<timestamp>/.
 #

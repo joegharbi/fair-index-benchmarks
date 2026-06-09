@@ -5,7 +5,7 @@ energy and performance comparisons reflect the **language and runtime** rather t
 implementation differences. The suite covers three workload families — **static HTTP**, **dynamic
 HTTP**, and **WebSocket** — and is built to be measured by both the
 [Green Metrics Tool](https://github.com/green-coding-solutions/green-metrics-tool) and a
-Scaphandre-based [web-server benchmarking framework](https://github.com/joegharbi/BEAM-web-server-benchmarks),
+Scaphandre-based [web-server benchmarking framework](https://github.com/joegharbi/web-server-benchmarks),
 so results from different tools and environments can be compared on equal footing.
 
 ## Why "fair"
@@ -63,7 +63,7 @@ docs/LOCAL_RUNS.md                         # local-run instructions
 - A [Green Metrics Tool](https://github.com/green-coding-solutions/green-metrics-tool) installation
   (local or hosted) for the GMT measurements
 - [Scaphandre](https://github.com/hubblo-org/scaphandre) and the
-  [web-server benchmarking framework](https://github.com/joegharbi/BEAM-web-server-benchmarks)
+  [web-server benchmarking framework](https://github.com/joegharbi/web-server-benchmarks)
   for the framework measurements
 - A container registry (only needed when running on a hosted GMT cluster)
 
@@ -122,7 +122,7 @@ See [docs/LOCAL_RUNS.md](docs/LOCAL_RUNS.md) for options and prerequisites.
 
 ## Related
 
-- Web-server benchmarking framework: <https://github.com/joegharbi/BEAM-web-server-benchmarks>
+- Web-server benchmarking framework: <https://github.com/joegharbi/web-server-benchmarks>
 - Green Metrics Tool: <https://github.com/green-coding-solutions/green-metrics-tool> ·
   <https://metrics.green-coding.io>
 - Scaphandre: <https://github.com/hubblo-org/scaphandre>

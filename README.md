@@ -122,7 +122,7 @@ See [docs/LOCAL_RUNS.md](docs/LOCAL_RUNS.md) for options and prerequisites.
 
 ## Related
 
-- Web-server benchmarking framework: <https://github.com/joegharbi/web-server-benchmarks>
+- BEAM-web-server-benchmarks: <https://github.com/joegharbi/BEAM-web-server-benchmarks>
 - Green Metrics Tool: <https://github.com/green-coding-solutions/green-metrics-tool> ·
   <https://metrics.green-coding.io>
 - Scaphandre: <https://github.com/hubblo-org/scaphandre>

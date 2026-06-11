@@ -60,7 +60,8 @@ if [[ "$DO_HTTP" == "1" ]]; then
 fi
 if [[ "$DO_WS" == "1" ]]; then
   for IMG in $WS_IMAGES; do
-    run_one "$IMG" "gmt/usage_scenario_websocket_full_sweep.yml" "${TAG}-${IMG}-ws-sweep"
+    run_one "$IMG" "gmt/usage_scenario_websocket.yml"        "${TAG}-${IMG}-ws-burst"
+    run_one "$IMG" "gmt/usage_scenario_websocket_stream.yml" "${TAG}-${IMG}-ws-stream"
   done
 fi
 

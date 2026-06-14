@@ -18,6 +18,9 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Load local configuration (paths, load parameters) if present — see .env.example.
+if [ -f "$HERE/.env" ]; then set -a; . "$HERE/.env"; set +a; fi
+
 FRAMEWORK_ROOT="${FRAMEWORK_ROOT:-$(cd "$HERE/.." && pwd)/web-server-benchmarks}"
 WORKERS="${WORKERS:-100}"
 PORT="${PORT:-8001}"
@@ -61,8 +64,13 @@ if [[ "$DO_BUILD" == "1" ]]; then
   PUSH=0 "$HERE/scripts/build_and_push.sh"
 fi
 
-echo ">>> caching sudo (Scaphandre needs it)"
+echo ">>> caching sudo (Scaphandre needs it); a keep-alive holds it for the whole run"
 sudo -v
+# Refresh the sudo timestamp in the background so long measurements (WebSocket bursts can
+# run for many minutes) never re-prompt. The keep-alive exits when this script exits.
+( while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done ) &
+SUDO_KEEPALIVE_PID=$!
+trap 'kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true' EXIT
 
 cd "$OUT"   # Scaphandre JSON + any default outputs land here, tidy per run
 

@@ -142,6 +142,16 @@ cd fair-index-benchmarks
 - Output streams live to the terminal and is also saved to
   `results/local-gmt/<timestamp>/run.log`.
 
+**One-by-one mode (for a fair comparison with the framework).** By default GMT runs HTTP as one
+bulk sweep, but the framework measures one load at a time. To make the structures match, run GMT
+per load:
+```bash
+./scripts/run_local_gmt.sh --per-load --http-only   # one GMT run per load (13 by default)
+```
+This is much slower (~52 runs) because of GMT's fixed per-run overhead — that cost is itself a tool
+characteristic. Trim the grid for a quick check with `HTTP_LOADS="1000 20000 80000"`. WebSocket is
+already one-by-one in both tools, so it needs no special mode.
+
 Each run ends with `>>>> MEASUREMENT SUCCESSFULLY COMPLETED <<<<`. The
 `Cannot calculate the total network carbon consumption ...` message is **not** a failure — it only
 means no carbon-intensity provider is configured, so the SCI/carbon step is skipped. Energy is still
@@ -217,6 +227,27 @@ cd fair-index-benchmarks
 ### Collect framework results
 The per-image CSVs in `results/local-framework/<timestamp>/` carry energy **and** the
 successful/failed request counts in the same rows, so delivered work sits next to energy.
+
+---
+
+## 5. Build the comparison table
+
+Once the local GMT (use `--per-load` for HTTP) and framework runs are done, join everything into
+clean tables:
+```bash
+cd fair-index-benchmarks
+python3 scripts/collect_results.py
+```
+- Standard library only — plain `python3`, no virtualenv. It reads the GMT energy from the local
+  database (the password is read from the postgres container automatically), GMT request success
+  from the `results/local-gmt/*/run.log` load-summary lines, and the framework energy/success from
+  the CSVs.
+- Output: `results/comparison/<timestamp>/http_perload.csv` and `websocket.csv`, plus a printed
+  summary. Each row pairs, per `(image, load)` (HTTP) or `(image, pattern, 50 clients)` (WebSocket):
+  GMT energy (CPU + DRAM, workload window), framework energy, both success counts, joules per
+  successful request, and the GMT/framework ratio.
+- It uses `RUN_PREFIX` (default `local`) to find the GMT runs, matching the run names the GMT script
+  produces.
 
 ---
 

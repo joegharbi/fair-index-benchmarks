@@ -163,7 +163,7 @@ def main():
     gmt_s = gmt_success_from_logs(prefix)
     fw_http, fw_ws = read_framework()
 
-    gmt_http, gmt_ws = {}, {}
+    gmt_http, gmt_ws, gmt_bulk = {}, {}, {}
     for name, e in gmt_e.items():
         m = re.match(rf"^{re.escape(prefix)}-(fair-\S+?)-n(\d+)$", name)
         if m:
@@ -172,6 +172,10 @@ def main():
         m = re.match(rf"^{re.escape(prefix)}-(fair-\S+?)-ws-(burst|stream)-c(\d+)$", name)
         if m:
             gmt_ws[(m.group(1), m.group(2), int(m.group(3)))] = {**e, "name": name}
+            continue
+        m = re.match(rf"^{re.escape(prefix)}-(fair-\S+?)-sweep$", name)
+        if m:
+            gmt_bulk[m.group(1)] = {**e, "name": name}   # HTTP bulk (whole sweep, one measurement)
 
     out_dir = os.path.join(HERE, "results", "comparison", time.strftime("%Y-%m-%d_%H%M%S"))
     os.makedirs(out_dir, exist_ok=True)
@@ -199,7 +203,7 @@ def main():
                 round(g_tot / f["energy_j"], 1) if (g and f and f["energy_j"]) else "",
             ])
 
-    # ---- WebSocket (matched at 50 clients) ----
+    # ---- WebSocket (matched per image, pattern, client count) ----
     ws_path = os.path.join(out_dir, "websocket.csv")
     ws_keys = sorted(set(gmt_ws) | set(fw_ws))
     with open(ws_path, "w", newline="", encoding="utf-8") as fh:
@@ -219,9 +223,28 @@ def main():
                 round(g_tot / f["energy_j"], 1) if (g and f and f["energy_j"]) else "",
             ])
 
+    # ---- HTTP aggregate: GMT bulk (sweep) vs one-by-one sum ----
+    agg_path = os.path.join(out_dir, "http_aggregate.csv")
+    images = sorted(set(i for i, _ in gmt_http) | set(gmt_bulk) | set(i for i, _ in fw_http))
+    with open(agg_path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["image", "gmt_bulk_j", "gmt_onebyone_sum_j", "fw_onebyone_sum_j",
+                    "gmt_bulk_over_onebyone", "gmt_over_fw"])
+        for img in images:
+            gb = (gmt_bulk[img]["cpu_j"] + gmt_bulk[img]["dram_j"]) if img in gmt_bulk else None
+            gs = sum(v["cpu_j"] + v["dram_j"] for (i, _), v in gmt_http.items() if i == img) or None
+            fs = sum(v["energy_j"] for (i, _), v in fw_http.items()
+                     if i == img and v["energy_j"] == v["energy_j"]) or None
+            w.writerow([img,
+                        round(gb, 3) if gb else "", round(gs, 3) if gs else "",
+                        round(fs, 3) if fs else "",
+                        round(gb / gs, 3) if (gb and gs) else "",
+                        round(gs / fs, 1) if (gs and fs) else ""])
+
     # ---- summary ----
     print(f"HTTP per-load rows: {len(keys)}  ->  {http_path}")
     print(f"WebSocket rows:     {len(ws_keys)}  ->  {ws_path}")
+    print(f"HTTP aggregate:     {len(images)} images  ->  {agg_path}")
     print("\nHTTP per-load (image | load | GMT total J | framework J | GMT/framework):")
     for img, load in keys:
         g, f = gmt_http.get((img, load)), fw_http.get((img, load))
@@ -229,6 +252,13 @@ def main():
         fe = round(f["energy_j"], 3) if f else "-"
         ratio = round((g["cpu_j"] + g["dram_j"]) / f["energy_j"], 1) if (g and f and f["energy_j"]) else "-"
         print(f"  {img:<22} {str(load):<7} {str(gt):>10} {str(fe):>10} {str(ratio):>8}")
+
+    print("\nHTTP bulk vs one-by-one (image | GMT bulk J | GMT 1x1 sum J | bulk/1x1):")
+    for img in images:
+        gb = (gmt_bulk[img]["cpu_j"] + gmt_bulk[img]["dram_j"]) if img in gmt_bulk else None
+        gs = sum(v["cpu_j"] + v["dram_j"] for (i, _), v in gmt_http.items() if i == img) or None
+        rel = round(gb / gs, 3) if (gb and gs) else "-"
+        print(f"  {img:<22} {str(round(gb,1) if gb else '-'):>10} {str(round(gs,1) if gs else '-'):>12} {str(rel):>9}")
 
 
 if __name__ == "__main__":

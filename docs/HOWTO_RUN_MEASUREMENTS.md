@@ -35,6 +35,19 @@ shown as `$GMT_ROOT`, `$FRAMEWORK_ROOT`, and so on.
 
 ---
 
+## TL;DR — run the whole local campaign with one command
+
+After `.env` is set and the machine is prepared (section 0), this runs the framework (one-by-one)
+plus GMT bulk **and** one-by-one, one tool at a time:
+```bash
+./scripts/run_all.sh        # asks for sudo once, up front; then unattended (several hours)
+python3 scripts/collect_results.py
+```
+Sections 2–5 below explain each leg and how to run them individually. Trim the duration with, for
+example, `HTTP_LOADS="1000 20000 80000" WS_CLIENTS="50" ./scripts/run_all.sh`.
+
+---
+
 ## 0. Before every measurement run (controlled conditions)
 
 Energy readings are sensitive to background activity. For the cleanest data, prepare the machine

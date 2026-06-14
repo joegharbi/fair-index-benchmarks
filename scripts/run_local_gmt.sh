@@ -15,9 +15,21 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Load local configuration (paths, registry) if present — see .env.example.
+if [ -f "$HERE/.env" ]; then set -a; . "$HERE/.env"; set +a; fi
+
 GMT_ROOT="${GMT_ROOT:-$(cd "$HERE/.." && pwd)/green-metrics-tool}"
-PY="${PY:-python3}"
+PY="${PY:-${GMT_ROOT}/venv/bin/python}"
+[[ -x "$PY" ]] || PY="python3"
+# Force unbuffered Python output. GMT prints an interactive (y/N) prompt on a failed
+# docker pull; with stdout piped to tee, a buffered prompt is invisible and the run
+# looks hung while it blocks on stdin. Unbuffered output makes any prompt visible.
+export PYTHONUNBUFFERED=1
 TAG="${TAG:-local}"
+# Registry-qualified refs so `docker pull` succeeds (a bare local tag resolves to
+# Docker Hub, fails, and drops GMT into the hanging prompt above).
+REG="${REG:-${REGISTRY:-ghcr.io}/${GHCR_USER:-joegharbi}}"
+TAGV="${TAGV:-${TAG:-v1}}"
 HTTP_IMAGES="${HTTP_IMAGES:-fair-erlang-index fair-elixir-index fair-erlang-dynamic fair-elixir-dynamic}"
 WS_IMAGES="${WS_IMAGES:-fair-erlang-websocket fair-elixir-websocket}"
 
@@ -48,9 +60,12 @@ echo "GMT_ROOT=$GMT_ROOT  repo(--uri)=$HERE  TAG=$TAG  HTTP=[$DO_HTTP] WS=[$DO_W
 
 run_one () {
   local img="$1" scenario="$2" name="$3"
-  echo ">>> $name  (scenario=$scenario image=$img)"
+  # A short image name (no slash) is expanded to a registry ref; a full ref is used as-is.
+  local ref="$img"
+  [[ "$img" == *"/"* ]] || ref="${REG}/${img}:${TAGV}"
+  echo ">>> $name  (scenario=$scenario image=$ref)"
   "$PY" "$RUNNER" --uri "$HERE" --filename "$scenario" \
-    --name "$name" --variable "__GMT_VAR_BEAM_IMAGE__=${img}"
+    --name "$name" --variable "__GMT_VAR_BEAM_IMAGE__=${ref}"
 }
 
 if [[ "$DO_HTTP" == "1" ]]; then

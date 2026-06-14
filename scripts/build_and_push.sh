@@ -4,12 +4,15 @@
 #   GHCR_USER=joegharbi TAG=v1 ./scripts/build_and_push.sh           # build + push to ghcr.io
 #   PUSH=0 ./scripts/build_and_push.sh                               # build only (local tags)
 set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Load local configuration (registry namespace, tag) if present — see .env.example.
+if [ -f "$HERE/.env" ]; then set -a; . "$HERE/.env"; set +a; fi
 
 REGISTRY="${REGISTRY:-ghcr.io}"
 GHCR_USER="${GHCR_USER:-joegharbi}"
 TAG="${TAG:-v1}"
 PUSH="${PUSH:-1}"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 build_one () {
   local name="$1" dir="$2"

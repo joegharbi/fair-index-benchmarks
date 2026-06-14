@@ -54,6 +54,7 @@ scripts/
   run_local_gmt.sh                         # run the GMT scenarios on a local GMT install
   run_local_framework.sh                   # run the benchmarking framework locally
   pull_results.py                          # list hosted GMT runs via the public API
+docs/HOWTO_RUN_MEASUREMENTS.md             # run all 3 environments (cloud/local GMT, framework)
 docs/LOCAL_RUNS.md                         # local-run instructions
 ```
 
@@ -66,6 +67,20 @@ docs/LOCAL_RUNS.md                         # local-run instructions
   [web-server benchmarking framework](https://github.com/joegharbi/web-server-benchmarks)
   for the framework measurements
 - A container registry (only needed when running on a hosted GMT cluster)
+
+## Configuration
+
+Machine-specific settings (tool paths, registry namespace, database credentials) live in a `.env`
+file in the repository root, so nothing about your machine is hard-coded. Copy the template and edit
+it once:
+
+```bash
+cp .env.example .env
+# edit .env: set GMT_ROOT, FRAMEWORK_ROOT, GHCR_USER, ...
+```
+
+`.env` is git-ignored; the scripts load it automatically. See
+[docs/HOWTO_RUN_MEASUREMENTS.md](docs/HOWTO_RUN_MEASUREMENTS.md) for the full run guide.
 
 ## Build
 

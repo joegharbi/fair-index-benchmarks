@@ -3,3 +3,10 @@ __pycache__/
 _build/
 results/
 output/
+
+# Local configuration (paths, credentials) — never commit. Template: .env.example
+/.env
+
+# Python virtual environments
+venv/
+.venv/

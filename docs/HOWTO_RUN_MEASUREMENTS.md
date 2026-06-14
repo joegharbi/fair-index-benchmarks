@@ -149,8 +149,14 @@ per load:
 ./scripts/run_local_gmt.sh --per-load --http-only   # one GMT run per load (13 by default)
 ```
 This is much slower (~52 runs) because of GMT's fixed per-run overhead — that cost is itself a tool
-characteristic. Trim the grid for a quick check with `HTTP_LOADS="1000 20000 80000"`. WebSocket is
-already one-by-one in both tools, so it needs no special mode.
+characteristic. Trim the grid for a quick check with `HTTP_LOADS="1000 20000 80000"`.
+
+WebSocket is one-by-one in both tools. The GMT WebSocket leg runs one measurement per pattern per
+client count to match the framework's {5, 50, 100} clients:
+```bash
+./scripts/run_local_gmt.sh --ws-only        # 2 images x {burst,stream} x {5,50,100} = 12 runs
+```
+Override the counts with `WS_CLIENTS="5 50 100"`.
 
 Each run ends with `>>>> MEASUREMENT SUCCESSFULLY COMPLETED <<<<`. The
 `Cannot calculate the total network carbon consumption ...` message is **not** a failure — it only

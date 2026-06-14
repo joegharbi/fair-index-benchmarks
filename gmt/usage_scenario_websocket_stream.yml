@@ -2,7 +2,8 @@
 # Fair WebSocket — stream (controlled-rate echo). A single sustained run, sized like the
 # burst scenario so the measured phase is long enough for reliable energy measurement.
 # Local runner.py: --variable "__GMT_VAR_BEAM_IMAGE__=fair-erlang-websocket"
-name: Fair WebSocket (echo, stream, 50 clients)
+#                  --variable "__GMT_VAR_WS_CLIENTS__=50"   (concurrent clients)
+name: Fair WebSocket (echo, stream)
 author: fair-index-benchmarks
 description: >
   One BEAM WebSocket echo server plus a load generator running concurrent stream echo
@@ -27,4 +28,4 @@ flow:
     commands:
       - type: console
         shell: sh
-        command: python3 /tmp/repo/gmt/tools/ws_load.py --url ws://beam-server:80/ --pattern stream --clients 50 --size_kb 64 --rate 50 --duration 25 --startup_wait 2
+        command: python3 /tmp/repo/gmt/tools/ws_load.py --url ws://beam-server:80/ --pattern stream --clients __GMT_VAR_WS_CLIENTS__ --size_kb 64 --rate 50 --duration 25 --startup_wait 2

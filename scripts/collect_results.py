@@ -163,15 +163,15 @@ def main():
     gmt_s = gmt_success_from_logs(prefix)
     fw_http, fw_ws = read_framework()
 
-    gmt_http, gmt_ws = {}, {}   # GMT WebSocket scenario fixes clients at 50
+    gmt_http, gmt_ws = {}, {}
     for name, e in gmt_e.items():
         m = re.match(rf"^{re.escape(prefix)}-(fair-\S+?)-n(\d+)$", name)
         if m:
             gmt_http[(m.group(1), int(m.group(2)))] = {**e, "name": name}
             continue
-        m = re.match(rf"^{re.escape(prefix)}-(fair-\S+?)-ws-(burst|stream)$", name)
+        m = re.match(rf"^{re.escape(prefix)}-(fair-\S+?)-ws-(burst|stream)-c(\d+)$", name)
         if m:
-            gmt_ws[(m.group(1), m.group(2))] = {**e, "name": name}
+            gmt_ws[(m.group(1), m.group(2), int(m.group(3)))] = {**e, "name": name}
 
     out_dir = os.path.join(HERE, "results", "comparison", time.strftime("%Y-%m-%d_%H%M%S"))
     os.makedirs(out_dir, exist_ok=True)
@@ -201,13 +201,13 @@ def main():
 
     # ---- WebSocket (matched at 50 clients) ----
     ws_path = os.path.join(out_dir, "websocket.csv")
-    ws_keys = sorted(set((i, p, 50) for (i, p) in gmt_ws) | set(fw_ws))
+    ws_keys = sorted(set(gmt_ws) | set(fw_ws))
     with open(ws_path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["image", "pattern", "clients", "gmt_cpu_j", "gmt_dram_j", "gmt_total_j",
                     "gmt_success", "fw_energy_j", "fw_success", "gmt_over_fw"])
         for img, pattern, clients in ws_keys:
-            g = gmt_ws.get((img, pattern)) if clients == 50 else None
+            g = gmt_ws.get((img, pattern, clients))
             f = fw_ws.get((img, pattern, clients))
             g_tot = g["cpu_j"] + g["dram_j"] if g else None
             w.writerow([

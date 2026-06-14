@@ -12,7 +12,7 @@
 #   ./scripts/run_local_gmt.sh --http-only | --ws-only
 #   IGNORE_RAPL_FILTER=1 ./scripts/run_local_gmt.sh   # bypass RAPL energy-filtering check (RAPL caveated)
 #
-# Env overrides: GMT_ROOT, PY, RUN_PREFIX, HTTP_IMAGES, WS_IMAGES, HTTP_LOADS (image tag = TAG, via .env)
+# Env overrides: GMT_ROOT, PY, RUN_PREFIX, HTTP_IMAGES, WS_IMAGES, HTTP_LOADS, WS_CLIENTS (image tag = TAG, via .env)
 # NOTE: --per-load runs one GMT measurement per load (13 by default), so it is much slower than the
 #       sweep because of GMT's fixed per-run overhead. Trim HTTP_LOADS for a quicker pilot.
 # NOTE: commit pending changes first — GMT uses the repo at --uri.
@@ -39,6 +39,8 @@ HTTP_IMAGES="${HTTP_IMAGES:-fair-erlang-index fair-elixir-index fair-erlang-dyna
 WS_IMAGES="${WS_IMAGES:-fair-erlang-websocket fair-elixir-websocket}"
 # Per-load grid for --per-load (same loads the framework uses, so the two tools are comparable).
 HTTP_LOADS="${HTTP_LOADS:-100 1000 5000 8000 10000 15000 20000 30000 40000 50000 60000 70000 80000}"
+# WebSocket concurrent-client counts (one run per count per pattern, matching the framework).
+WS_CLIENTS="${WS_CLIENTS:-5 50 100}"
 
 DO_HTTP=1; DO_WS=1; PER_LOAD=0
 for a in "$@"; do
@@ -85,6 +87,14 @@ run_one_load () {  # single-load scenario with an explicit request count (one-by
     --variable "__GMT_VAR_NUM_REQUESTS__=${n}"
 }
 
+run_one_ws () {  # WebSocket scenario with an explicit concurrent-client count (one-by-one mode)
+  local img="$1" scenario="$2" name="$3" c="$4" ref; ref="$(img_ref "$img")"
+  echo ">>> $name  (scenario=$scenario image=$ref clients=$c)"
+  "$PY" "$RUNNER" --uri "$HERE" --filename "$scenario" \
+    --name "$name" --variable "__GMT_VAR_BEAM_IMAGE__=${ref}" \
+    --variable "__GMT_VAR_WS_CLIENTS__=${c}"
+}
+
 if [[ "$DO_HTTP" == "1" ]]; then
   for IMG in $HTTP_IMAGES; do
     if [[ "$PER_LOAD" == "1" ]]; then
@@ -96,8 +106,10 @@ if [[ "$DO_HTTP" == "1" ]]; then
 fi
 if [[ "$DO_WS" == "1" ]]; then
   for IMG in $WS_IMAGES; do
-    run_one "$IMG" "gmt/usage_scenario_websocket.yml"        "${RUN_PREFIX}-${IMG}-ws-burst"
-    run_one "$IMG" "gmt/usage_scenario_websocket_stream.yml" "${RUN_PREFIX}-${IMG}-ws-stream"
+    for c in $WS_CLIENTS; do
+      run_one_ws "$IMG" "gmt/usage_scenario_websocket.yml"        "${RUN_PREFIX}-${IMG}-ws-burst-c${c}"  "$c"
+      run_one_ws "$IMG" "gmt/usage_scenario_websocket_stream.yml" "${RUN_PREFIX}-${IMG}-ws-stream-c${c}" "$c"
+    done
   done
 fi
 

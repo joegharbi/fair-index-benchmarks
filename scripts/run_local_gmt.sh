@@ -79,6 +79,17 @@ if [ -d "$GMT_ROOT/docker" ]; then
   done
 fi
 
+# Fail fast if the registry is unreachable. GMT pulls martizih/kaniko:slim (plus the images and the
+# loadgen's apt/pip packages) every run and hard-fails offline, so without this a Wi-Fi/DNS outage
+# would fail all runs one by one. Pre-pull the builder; abort here with one clear message instead.
+echo ">>> checking registry connectivity (GMT pulls its builder every run)"
+if ! docker pull martizih/kaniko:slim >/dev/null 2>&1; then
+  echo "ERROR: cannot reach the container registry. GMT needs the network up for its kaniko builder," >&2
+  echo "       the ghcr images, and the load generator's package installs. Turn Wi-Fi on, confirm DNS" >&2
+  echo "       resolves (e.g. 'docker pull martizih/kaniko:slim'), then re-run." >&2
+  exit 1
+fi
+
 img_ref () {  # short name (no slash) -> registry ref; a full ref is used as-is
   local img="$1"; [[ "$img" == *"/"* ]] && echo "$img" || echo "${REG}/${img}:${TAGV}"
 }

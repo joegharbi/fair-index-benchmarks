@@ -68,6 +68,17 @@ exec > >(tee -a "$OUT/run.log") 2>&1
 echo "=== Local GMT run $TS ==="
 echo "GMT_ROOT=$GMT_ROOT  repo(--uri)=$HERE  prefix=$RUN_PREFIX  HTTP=[$DO_HTTP] WS=[$DO_WS]"
 
+# Ensure the GMT database stack (Postgres+Redis) is up — the runner needs it. A suspended laptop or a
+# Docker restart can stop these containers, which makes the runner fail with "DB is not available".
+if [ -d "$GMT_ROOT/docker" ]; then
+  echo ">>> ensuring GMT database stack is up"
+  ( cd "$GMT_ROOT/docker" && docker compose up -d ) || echo "WARNING: 'docker compose up -d' failed"
+  for _ in $(seq 1 30); do
+    docker exec green-coding-postgres-container pg_isready -p "${GMT_DB_PORT:-9573}" -q 2>/dev/null && break
+    sleep 1
+  done
+fi
+
 img_ref () {  # short name (no slash) -> registry ref; a full ref is used as-is
   local img="$1"; [[ "$img" == *"/"* ]] && echo "$img" || echo "${REG}/${img}:${TAGV}"
 }

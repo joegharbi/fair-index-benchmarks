@@ -74,11 +74,15 @@ def psql(query, container, port, dbname, password):
 
 def gmt_energy(prefix, container, port, dbname, password):
     """Return {run_name: {'cpu_j':float, 'dram_j':float}} for the workload sub-phase."""
+    # Use the LATEST run per name, so re-runs (which reuse the same name) override stale data.
     query = (
-        "select r.name, ps.metric, ps.value "
-        "from runs r join phase_stats ps on ps.run_id = r.id "
-        f"where r.name like '{prefix}-fair-%' and r.failed = false "
-        "and ps.metric in ('cpu_energy_rapl_msr_component','memory_energy_rapl_msr_component') "
+        "with latest as ("
+        "  select distinct on (name) id, name from runs "
+        f"  where name like '{prefix}-fair-%' and failed = false "
+        "  order by name, created_at desc) "
+        "select l.name, ps.metric, ps.value "
+        "from latest l join phase_stats ps on ps.run_id = l.id "
+        "where ps.metric in ('cpu_energy_rapl_msr_component','memory_energy_rapl_msr_component') "
         "and (ps.phase like '%HTTP workload%' or ps.phase like '%WebSocket workload%')"
     )
     energy = defaultdict(lambda: {"cpu_j": 0.0, "dram_j": 0.0})

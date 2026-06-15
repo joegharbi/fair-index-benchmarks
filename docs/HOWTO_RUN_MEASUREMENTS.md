@@ -55,9 +55,14 @@ before each local run (cloud runs are isolated on the cluster, so this applies m
 and the framework):
 
 - Close browsers and background applications; quit anything syncing or indexing.
-- Turn off Wi-Fi (or unplug Ethernet) if the workload does not need the network.
+- **Keep the network ON for GMT runs.** GMT provisions its load generator from the internet each
+  run (`apk add` + `pip install websockets`) and pulls images, so Wi-Fi off makes the GMT legs fail.
+  This network use happens only in the setup/boot phases, which are excluded from the comparison
+  (only the RUNTIME workload sub-phase is measured), so it does not pollute the energy numbers. The
+  framework alone runs offline, but for a combined run keep the network on.
 - Dim the screen and disable automatic brightness.
-- Keep the power source consistent (always on AC, or always on battery — do not switch mid-campaign).
+- Stay on AC power for the whole campaign (it runs several hours). `run_all.sh` inhibits sleep
+  automatically so the machine cannot suspend and stop Docker mid-run.
 - Reduce timing noise that GMT warns about:
   ```bash
   sudo timedatectl set-ntp false     # re-enable later with: sudo timedatectl set-ntp true

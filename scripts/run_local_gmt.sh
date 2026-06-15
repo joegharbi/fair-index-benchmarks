@@ -90,6 +90,13 @@ if ! docker pull martizih/kaniko:slim >/dev/null 2>&1; then
   exit 1
 fi
 
+# Clear metric providers orphaned by a previously interrupted run. Ctrl-C leaves the provider
+# binaries running, and GMT then refuses to start ("another instance is already running"). Skip if a
+# runner is active, so a concurrently running measurement is not disturbed.
+if ! pgrep -f "runner.py" >/dev/null 2>&1; then
+  pkill -f "metric-provider-binary" 2>/dev/null || true
+fi
+
 img_ref () {  # short name (no slash) -> registry ref; a full ref is used as-is
   local img="$1"; [[ "$img" == *"/"* ]] && echo "$img" || echo "${REG}/${img}:${TAGV}"
 }

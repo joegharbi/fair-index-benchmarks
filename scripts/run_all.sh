@@ -42,8 +42,8 @@ fi
 
 echo "############################################################"
 echo "# FINAL FULL RUN — framework (one-by-one) + GMT (bulk + one-by-one)"
-echo "# Run on a quiet machine (Wi-Fi off, NTP off, screen dimmed)."
-echo "# Sleep is inhibited for the duration; do not manually suspend."
+echo "# Quiet machine: Wi-Fi ON (GMT pulls images + installs its loadgen), NTP off, screen dimmed."
+echo "# Sleep is inhibited for the duration; do not manually suspend or Ctrl-C."
 echo "############################################################"
 
 # 1) Framework (one-by-one HTTP + WebSocket). Activate its venv so WebSocket's `websockets` is found.
